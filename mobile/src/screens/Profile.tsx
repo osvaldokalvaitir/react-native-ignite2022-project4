@@ -9,6 +9,9 @@ import * as yup from 'yup';
 
 import { useAuth } from '@hooks/useAuth';
 
+import { api } from '@services/api';
+import { AppError } from '@utils/AppError';
+
 import { ScreenHeader } from '@components/ScreenHeader';
 import { UserPhoto } from '@components/UserPhoto';
 import { Button } from '@components/Button';
@@ -48,6 +51,7 @@ const profileSchema = yup.object({
 })
 
 export function Profile() {
+  const [isUpdating, setIsUpdating] = useState(false);
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
   const [userPhoto, setUserPhoto] = useState('https://github.com/osvaldokalvaitir.png');
 
@@ -100,7 +104,28 @@ export function Profile() {
   }
 
   async function handleProfileUpdate(data: FormDataProps) {
-    console.log(data);
+    try {
+      setIsUpdating(true);
+
+      await api.put('/users', data);
+
+      toast.show({
+        title: 'Perfil atualizado com sucesso!',
+        placement: 'top',
+        bgColor: 'green.500'
+      });
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : 'Não foi possível atualizar os dados. Tente novamente mais tarde.';
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500'
+      })
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   return (
@@ -209,6 +234,7 @@ export function Profile() {
             title="Atualizar" 
             mt={4} 
             onPress={handleSubmit(handleProfileUpdate)}
+            isLoading={isUpdating}
           />
         </Center>
       </ScrollView>
